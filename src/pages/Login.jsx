@@ -9,8 +9,11 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const [errors, setErrors] = useState({});
+
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setErrors({}); // Clear previous errors
 
     try {
       const response = await axios.post(`${baseUrl}/auth/signin`, {
@@ -19,8 +22,6 @@ const Login = () => {
       });
 
       if (response.status === 200) {
-        console.log("Sign-in successful");
-        console.log(response.data);
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("userId", response.data.user.id);
         localStorage.setItem("username", response.data.user.username);
@@ -28,13 +29,16 @@ const Login = () => {
         navigate("/home");
       }
     } catch (err) {
-      if (err.response && err.response.status === 400) {
-        // Backend sends specific error messages for invalid user or password
-        toast.error(err.response.data.message);
+      if (err.response) {
+        if (err.response.status === 400) {
+          setErrors({ message: err.response.data.message }); // Store validation error
+          toast.error(err.response.data.message);
+        } else {
+          toast.error("An error occurred during sign-in");
+        }
       } else {
-        // Generic error fallback
-        toast.error("An error occurred during sign-in");
         console.error(err);
+        toast.error("Network error");
       }
     }
   };
@@ -75,36 +79,52 @@ const Login = () => {
                           </label>
                           <input
                             type="email"
-                            className="form-control"
+                            className={`form-control ${
+                              errors.message && errors.message.includes("Email")
+                                ? "is-invalid"
+                                : ""
+                            }`}
                             id="useremail"
                             placeholder="Enter email"
                             onChange={(e) => setEmail(e.target.value)}
                             required
                           />
-                          <div className="invalid-feedback">
-                            Please Enter Email
-                          </div>
+                          {errors.message &&
+                            errors.message.includes("Email") && (
+                              <div className="invalid-feedback">
+                                {errors.message}
+                              </div>
+                            )}
                         </div>
 
                         <div className="mb-3">
-                          {/* <div className="float-end">
-                            <a href="/" className="text-muted">
+                          <div className="float-end">
+                            <Link to={"/resetpassword"} className="text-muted">
                               Forgot password?
-                            </a>
-                          </div> */}
+                            </Link>
+                          </div>
                           <label htmlFor="userpassword" className="form-label">
                             Password
                           </label>
-                          <div className="position-relative auth-pass-inputgroup mb-3">
-                            <input
-                              type="password"
-                              className="form-control pe-5 "
-                              placeholder="Enter Password"
-                              id="password-input"
-                              onChange={(e) => setPassword(e.target.value)}
-                              required
-                            />
-                          </div>
+                          <input
+                            type="password"
+                            className={`form-control ${
+                              errors.message &&
+                              errors.message.includes("Password")
+                                ? "is-invalid"
+                                : ""
+                            }`}
+                            placeholder="Enter Password"
+                            id="password-input"
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                          />
+                          {errors.message &&
+                            errors.message.includes("Password") && (
+                              <div className="invalid-feedback">
+                                {errors.message}
+                              </div>
+                            )}
                         </div>
 
                         <div className="text-center mt-4">

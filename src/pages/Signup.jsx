@@ -12,28 +12,41 @@ const Signup = () => {
     password: "",
   });
 
+  const [errors, setErrors] = useState({}); // Store validation errors
+
   const handleChange = (e) => {
     const { id, value } = e.target;
     setFormData({ ...formData, [id]: value });
+    setErrors({ ...errors, [id]: "" }); // Clear field error on change
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrors({}); // Reset errors before submitting
+
     try {
-      console.log(formData);
       const response = await axios.post(`${baseUrl}/auth/signup`, formData);
       if (response.status === 200) {
-        console.log(response.data);
         toast.success(response.data.message);
-      } else {
-        toast.error(response.data.message);
-        console.log(error);
       }
     } catch (error) {
-      console.error(error);
-      toast.error(error.response?.data?.message || "Error signing up");
+      if (error.response && error.response.status === 400) {
+        const errorData = error.response.data.errors;
+        if (Array.isArray(errorData)) {
+          const newErrors = {};
+          errorData.forEach((err) => {
+            newErrors[err.field] = err.message;
+          });
+          setErrors(newErrors);
+        } else {
+          toast.error(error.response.data.message);
+        }
+      } else {
+        toast.error("An error occurred while signing up.");
+      }
     }
   };
+
   return (
     <div className="auth-bg">
       <div className="container-fluid p-0">
@@ -72,16 +85,20 @@ const Signup = () => {
                           </label>
                           <input
                             type="text"
-                            className="form-control"
+                            className={`form-control ${
+                              errors.username ? "is-invalid" : ""
+                            }`}
                             id="username"
                             placeholder="Enter Username"
                             value={formData.username}
                             onChange={handleChange}
                             required
                           />
-                          <div className="invalid-feedback">
-                            Please Enter Username
-                          </div>
+                          {errors.username && (
+                            <div className="invalid-feedback">
+                              {errors.username}
+                            </div>
+                          )}
                         </div>
                         <div className="mb-3">
                           <label htmlFor="email" className="form-label">
@@ -89,16 +106,20 @@ const Signup = () => {
                           </label>
                           <input
                             type="email"
-                            className="form-control"
+                            className={`form-control ${
+                              errors.email ? "is-invalid" : ""
+                            }`}
                             id="email"
                             placeholder="Enter email"
                             value={formData.email}
                             onChange={handleChange}
                             required
                           />
-                          <div className="invalid-feedback">
-                            Please Enter Email
-                          </div>
+                          {errors.email && (
+                            <div className="invalid-feedback">
+                              {errors.email}
+                            </div>
+                          )}
                         </div>
 
                         <div className="mb-3">
@@ -108,13 +129,20 @@ const Signup = () => {
                           <div className="position-relative auth-pass-inputgroup mb-3">
                             <input
                               type="password"
-                              className="form-control pe-5 "
-                              placeholder="Enter Password"
+                              className={`form-control ${
+                                errors.password ? "is-invalid" : ""
+                              }`}
                               id="password"
+                              placeholder="Enter Password"
                               value={formData.password}
                               onChange={handleChange}
                               required
                             />
+                            {errors.password && (
+                              <div className="invalid-feedback">
+                                {errors.password}
+                              </div>
+                            )}
                           </div>
                         </div>
 
